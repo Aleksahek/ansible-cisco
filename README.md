@@ -1,13 +1,17 @@
 # ansible-cisco
 
 Learning network automation with Ansible and GNS3.  (This is a work in progress)
-This is a simple Ansible playbook that automates the configuration of loopback and backbone interfaces on Cisco routers running IOS 12.2 in a GNS3 environment. 
+This is a simple Ansible playbook that automates the configuration of loopback and backbone interfaces on Cisco routers running IOS 12.2 in a GNS3 environment.
 
-To run the playbook, do 
+To run the playbook, do
 
-    ansible-playbook ansible-cisco/site.yml
-    
- depending on where you have saved the playbook of course.   
+    ansible-playbook ansible-cisco/site.yml --ask-vault-pass
+
+ depending on where you have saved the playbook of course.
+
+edit vault password: `EDITOR=nano ansible-vault edit group_vars/vault`
+
+`default: Zz123456`
 
 
 ## Contents
@@ -19,7 +23,6 @@ To run the playbook, do
 * [Basic Router Configs](#basic-router-configs)
 * [Errors and Troubleshooting](#errors-and-troubleshooting)
 
-
 ## Aims
 
 Using an Ansible playbook to:
@@ -28,8 +31,7 @@ Using an Ansible playbook to:
 * configure the backbone interfaces on each router
 * configure OSPF on each router
 
-
-## Environment 
+## Environment
 
 * cisco ios 12.2(33)SRE9 - You need to provide your own IOS.
 * GNS3 - 2.1.0
@@ -37,8 +39,7 @@ Using an Ansible playbook to:
   * ansible-2.4.2.0
   * python version = 2.7.12
 
-
-## Ansible 
+## Ansible
 
 */etc/ansible/hosts*
 
@@ -47,11 +48,10 @@ Using an Ansible playbook to:
     saturn ansible_host=192.168.100.253 ansible_hostname=saturn
     mars ansible_host=192.168.100.252
     neptune ansible_host=192.168.100.251
-    
+
 The host definititions above do not persist when you shut down GNS3. You can either build your own image based on this or add these definitions each time.
 
-  
-Key checking must be disabled  
+Key checking must be disabled
 
 */etc/ansible/ansible.cfg*
 
@@ -62,18 +62,15 @@ You might also need to add this to the *.ssh/config* file on the control node
 
     StrictHostKeyChecking no
 
-
 ## Topology
 
 This is the topology used.
 
 ![Topology](https://github.com/jmdarville/ansible-cisco/blob/master/topology.png)
 
-
 The network 192.168.100.0/24 is acting as the management LAN for the control node to communicate with the routers whose FastEthernet0/0 is placed into this subnet.
 
 The GigabitEthernet1/0 interfaces on each router will be the backbone network.
-
 
 ## Basic Router Configs
 
@@ -88,7 +85,6 @@ These are the basic configs that create a user and allow remote access through s
 #### A word of warning
 
 The ssh keys on the routers do not persist after exiting GNS3 so you will have to regenerate them.
-
 
 ###### jupiter - basic config
 
@@ -113,7 +109,6 @@ The ssh keys on the routers do not persist after exiting GNS3 so you will have t
     no shut
     end
     write memory
-    
 
 ###### saturn - basic config
 
@@ -138,7 +133,6 @@ The ssh keys on the routers do not persist after exiting GNS3 so you will have t
     no shut
     end
     write memory
-    
 
 ###### mars - basic config
 
@@ -163,11 +157,10 @@ The ssh keys on the routers do not persist after exiting GNS3 so you will have t
     no shut
     end
     write memory
-    
 
 ###### neptune - basic config
 
-    enable 
+    enable
     conf t
     enable secret monkey
     username john password monkey
@@ -188,13 +181,12 @@ The ssh keys on the routers do not persist after exiting GNS3 so you will have t
     no shut
     end
     write memory
-    
 
 ## Errors and Troubleshooting:
 
 Ahh, where would we be without troubleshooting. (Answer: Back in the stone age.)
 
-### Inclusion of group_vars/all.yml is fine, but group_vars/router.yml is not. Resulting error is 
+### Inclusion of group_vars/all.yml is fine, but group_vars/router.yml is not. Resulting error is
 
     fatal: [jupiter]: FAILED! => {
        "msg": "'loopback' is undefined"
@@ -202,21 +194,21 @@ Ahh, where would we be without troubleshooting. (Answer: Back in the stone age.)
     fatal: [saturn]: FAILED! => {
        "msg": "'loopback' is undefined"
     }
-    
+
 Apparently this is a breaking change in Ansible 2.4. This playbook should work with 2.3, but I haven't checked.
 Adding a roles directory and defining the common configs in *roles/global/tasks/main.yml* seemed to fix this.
 
-But that gave way to 
+But that gave way to
 
 ### AttributeError: 'dict' object has no attribute 'rjust'
+
 in the ios_config module
 
     failed: [jupiter] (item={u'ip': u'10.0.0.1', u'mask': u'255.255.255.240', u'name': u'Loopback0', u'description': u'loopback
-    0'}) => {"changed": false, "item": {"description": "loopback 0", "ip": "10.0.0.1", "mask": "255.255.255.240", "name": "Loopback0"}, "module_stderr": "Traceback (most recent call last):\n  File \"/tmp/ansible_juGox5/ansible_module_ios_config.py\",
-    line 532, in <module>\n    main()\n  File \"/tmp/ansible_juGox5/ansible_module_ios_config.py\", line 437, in main\n    candidate, want_banners = get_candidate(module)\n  File \"/tmp/ansible_juGox5/ansible_module_ios_config.py\", line 364, in
+    0'}) => {"changed": false, "item": {"description": "loopback 0", "ip": "10.0.0.1", "mask": "255.255.255.240", "name": "Loopback0"}, "module_stderr": "Traceback (most recent call last):\n  File\"/tmp/ansible_juGox5/ansible_module_ios_config.py\",
+    line 532, in `<module>`\n    main()\n  File \"/tmp/ansible_juGox5/ansible_module_ios_config.py\", line 437, in main\n    candidate, want_banners = get_candidate(module)\n  File \"/tmp/ansible_juGox5/ansible_module_ios_config.py\", line 364, in
     get_candidate\n    candidate.add(module.params['lines'], parents=parents)\n  File \"/tmp/ansible_juGox5/ansible_modlib.zip
     /ansible/module_utils/netcfg.py\", line 405, in add\nAttributeError: 'dict' object has no attribute 'rjust'\n", "module_stdout": "", "msg": "MODULE FAILURE", "rc": 0}
-
 
 This was caused by syntax (human) error on lines 11 and 12 of *roles/global/tasks/main.yml*. The colons and quotation marks were causing the yaml to be misinterpreted.
 
@@ -228,16 +220,13 @@ Should be
     - description {{ item.description }}
     - ip address {{ item.ip }} {{item.mask}}
 
-
-
-
 ### SSH Algorithm mismatch
 
 When attempting to ssh into a router, you see the following error
 
     Unable to negotiate with 192.168.100.254 port 22: no matching key exchange method found. Their offer: diffie-hellman-group1-sha1
-    
-This is a legacy issue with OpenSSH. The diffie-hellman algorithm is not enabled by default in OpenSSH 7.0 and greater.  This page has more details. 
+
+This is a legacy issue with OpenSSH. The diffie-hellman algorithm is not enabled by default in OpenSSH 7.0 and greater.  This page has more details.
 
 [OpenSSH Legacy Options](http://www.openssh.com/legacy.html)
 
@@ -246,13 +235,12 @@ As a workaround for this example, add the following to *.ssh/config* on the cont
     Host 192.168.100.*
 	    KexAlgorithms +diffie-hellman-group1-sha1
 
-
 ### Timeout trying to send command
 
 When trying to save a running-config to startup-config, it times outs
 
     fatal: [mars]: FAILED! => {"changed": false, "msg": "timeout trying to send command: copy running-config startup-config", "rc": 1}
-    
+
 This is probably caused by IOS expected a prompt from the user and none is given. A nice solution is to use a handler.
 
 [How to save IOS configurations with Ansible](https://networklore.com/how-to-save-ios_config/)
@@ -263,12 +251,3 @@ Or, create a role with the sole function of saving a configuration.
       ios_config:
         provider: "{{ provider }}"
         save_when: modified
-
-
-
-
-
-
-
- 
- 
