@@ -2,7 +2,7 @@
 provider:
   host: "{{ ansible_host }}"
   username: john
-  password: ****
+  password: "{{ vault_provider_password }}"
   authorize: yes
   
 loopback:
